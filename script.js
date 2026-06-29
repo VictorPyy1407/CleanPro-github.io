@@ -48,6 +48,9 @@ let selectedCombo = combos[0];
 let currentStock = CONFIG.initialStock;
 let currentViewers = 27;
 let timerSeconds = 15 * 60;
+let map;
+let mapMarker;
+let selectedMapLink = "";
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
@@ -195,6 +198,107 @@ function closeConfirmationModal() {
   document.body.classList.remove("modal-open");
 }
 
+function keepModalLock() {
+  const hasOpenModal = !$("#checkout").classList.contains("hidden") || !$("#confirmation").classList.contains("hidden") || !$("#mapModal").classList.contains("hidden");
+  document.body.classList.toggle("modal-open", hasOpenModal);
+}
+
+function createGoogleMapsLink(lat, lng) {
+  return `https://www.google.com/maps?q=${lat.toFixed(6)},${lng.toFixed(6)}`;
+}
+
+function updateMapLocation(lat, lng, zoom = 16) {
+  selectedMapLink = createGoogleMapsLink(lat, lng);
+  $("#mapLinkInput").value = selectedMapLink;
+  $("#mapOpenLink").href = selectedMapLink;
+
+  if (!map) return;
+  map.setView([lat, lng], zoom);
+  if (!mapMarker) {
+    mapMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
+    mapMarker.on("dragend", () => {
+      const position = mapMarker.getLatLng();
+      updateMapLocation(position.lat, position.lng, map.getZoom());
+    });
+    return;
+  }
+
+  mapMarker.setLatLng([lat, lng]);
+}
+
+function initMapInstance() {
+  if (map || typeof L === "undefined") return;
+
+  const defaultLocation = [-25.2637, -57.5759];
+  map = L.map("mapPicker", { zoomControl: true }).setView(defaultLocation, 13);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap"
+  }).addTo(map);
+  map.on("click", (event) => updateMapLocation(event.latlng.lat, event.latlng.lng, map.getZoom()));
+  updateMapLocation(defaultLocation[0], defaultLocation[1], 13);
+}
+
+function openMapModal() {
+  $("#mapModal").classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  initMapInstance();
+  setTimeout(() => { if (map) map.invalidateSize(); }, 80);
+}
+
+function closeMapModal() {
+  $("#mapModal").classList.add("hidden");
+  keepModalLock();
+}
+
+async function searchMapLocation() {
+  const query = $("#mapSearch").value.trim();
+  const error = $("#mapError");
+  if (!query) {
+    error.textContent = "Escribí una dirección o lugar para buscar.";
+    return;
+  }
+
+  error.textContent = "Buscando ubicación...";
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(`${query}, Paraguay`)}`);
+    const results = await response.json();
+    if (!results.length) {
+      error.textContent = "No encontramos esa dirección. Probá con otra referencia.";
+      return;
+    }
+
+    updateMapLocation(Number(results[0].lat), Number(results[0].lon), 17);
+    error.textContent = "";
+  } catch (errorResponse) {
+    error.textContent = "No se pudo buscar la dirección. Probá pegando el enlace de Google Maps.";
+  }
+}
+
+function initMapPicker() {
+  $("[data-open-map]").addEventListener("click", openMapModal);
+  $$('[data-close-map]').forEach((button) => button.addEventListener("click", closeMapModal));
+  $("#mapModal").addEventListener("click", (event) => {
+    if (event.target.id === "mapModal") closeMapModal();
+  });
+  $("#mapSearchButton").addEventListener("click", searchMapLocation);
+  $("#mapSearch").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      searchMapLocation();
+    }
+  });
+  $("#mapLinkInput").addEventListener("input", (event) => {
+    selectedMapLink = event.target.value.trim();
+    $("#mapOpenLink").href = selectedMapLink || "https://www.google.com/maps";
+  });
+  $("#mapConfirm").addEventListener("click", () => {
+    const link = $("#mapLinkInput").value.trim() || selectedMapLink;
+    $("#mapsInput").value = link;
+    closeMapModal();
+  });
+}
+
 function initCheckoutModal() {
   // Hace que los botones de compra abran el formulario emergente.
   $$('[data-scroll-to-checkout]').forEach((link) => {
@@ -213,7 +317,7 @@ function initCheckoutModal() {
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeCheckoutModal();
+    if (event.key === "Escape" && $("#mapModal").classList.contains("hidden")) closeCheckoutModal();
   });
 }
 
@@ -228,7 +332,7 @@ function initConfirmationModal() {
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeConfirmationModal();
+    if (event.key === "Escape" && $("#mapModal").classList.contains("hidden")) closeConfirmationModal();
   });
 }
 
@@ -351,5 +455,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initTimer();
   initCheckoutModal();
   initConfirmationModal();
+  initMapPicker();
   initForm();
 });
