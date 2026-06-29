@@ -1,0 +1,2 @@
+id,product,combo,quantity,total,customer_name,customer_phone,city,address,neighborhood,reference,maps_url,status,created_at
+#PY000001,"CLEAN PRO – El destructor definitivo de grasa y óxido para parrillas","1 unidad",1,149000,"Nombre de ejemplo","0981123456","Asunción","Dirección de ejemplo","Barrio ejemplo","Referencia ejemplo","","pending_confirmation","2026-06-29T00:00:00Z"
