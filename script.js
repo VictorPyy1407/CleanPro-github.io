@@ -55,7 +55,6 @@ const money = (value) => `Gs. ${Number(value).toLocaleString("es-PY")}`;
 
 function initContent() {
   // Carga automaticamente los datos de CONFIG dentro del HTML.
-  document.title = `${CONFIG.productName} | Pago al recibir`;
   $$("[data-product-name]").forEach((el) => { el.textContent = CONFIG.productName; });
   $$("[data-store-name]").forEach((el) => { el.textContent = CONFIG.storeName; });
   $$("[data-store-logo]").forEach((el) => {
