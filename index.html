@@ -12,7 +12,6 @@
   <meta property="og:type" content="website">
   <title>VGSHOP PY | CLEAN PRO</title>
   <link rel="preload" href="assets/logo.png" as="image">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -244,7 +243,8 @@
           <input type="search" id="mapSearch" placeholder="Buscar dirección o lugar (ej. Shopping del Sol)">
           <button type="button" id="mapSearchButton">Buscar</button>
         </div>
-        <div id="mapPicker" class="map-picker" aria-label="Mapa para marcar ubicación"></div>
+        <iframe id="mapPicker" class="map-picker" title="Mapa para marcar ubicación" loading="lazy"
+          src="https://www.google.com/maps?q=Asuncion,Paraguay&output=embed"></iframe>
         <div class="map-link-row">
           <input type="url" id="mapLinkInput" placeholder="Pegar enlace de Google Maps">
           <a id="mapOpenLink" href="https://www.google.com/maps" target="_blank" rel="noopener">Abrir ↗</a>
@@ -268,8 +268,7 @@
       <strong id="offerTimer">14:59</strong>
     </div>
   </div>
-  
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <script src="script.js"></script>
 </body>
 
