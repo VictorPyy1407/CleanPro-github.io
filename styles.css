@@ -344,7 +344,9 @@ body.modal-open { overflow: hidden; }
 .map-search { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 14px 16px 8px; }
 .map-search input, .map-link-row input { border-radius: 6px; background: #101720; }
 .map-search button, .map-link-row a { display: grid; place-items: center; border: 1px solid rgba(125, 65, 255, 0.45); border-radius: 6px; background: rgba(125, 65, 255, 0.16); color: #bb9cff; font-weight: 900; text-decoration: none; padding: 0 12px; cursor: pointer; }
-.map-picker { width: calc(100% - 32px); height: 240px; margin: 0 16px; border: 0; border-radius: 8px; overflow: hidden; background: #1a2230; }
+.map-picker { width: calc(100% - 32px); height: 240px; margin: 0 16px; border: 1px solid rgba(145, 164, 194, 0.22); border-radius: 8px; overflow: hidden; background: #1a2230; }
+.leaflet-container { font: inherit; }
+.leaflet-control-attribution { display: none; }
 .map-link-row { display: grid; grid-template-columns: 1fr auto; gap: 0; margin: 0 16px 16px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; }
 .map-link-row input { border: 0; border-radius: 0; }
 .map-link-row a { border-width: 0 0 0 1px; border-radius: 0; }

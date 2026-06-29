@@ -48,6 +48,8 @@ let selectedCombo = combos[0];
 let currentStock = CONFIG.initialStock;
 let currentViewers = 27;
 let timerSeconds = 15 * 60;
+let map;
+let mapMarker;
 let selectedMapLink = "";
 
 const $ = (selector) => document.querySelector(selector);
@@ -207,17 +209,45 @@ function setMapLink(link) {
   $("#mapOpenLink").href = link || "https://www.google.com/maps";
 }
 
-function showMapSearch(query) {
-  const normalizedQuery = query.trim() || "Asuncion, Paraguay";
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(normalizedQuery)}`;
-  $("#mapPicker").src = `https://www.google.com/maps?q=${encodeURIComponent(normalizedQuery)}&output=embed`;
-  setMapLink(mapsUrl);
+function createGoogleMapsLink(lat, lng) {
+  return `https://www.google.com/maps?q=${lat.toFixed(6)},${lng.toFixed(6)}`;
+}
+
+function updateMapLocation(lat, lng, zoom = 16) {
+  setMapLink(createGoogleMapsLink(lat, lng));
+
+  if (!map) return;
+  map.setView([lat, lng], zoom);
+  if (!mapMarker) {
+    mapMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
+    mapMarker.on("dragend", () => {
+      const position = mapMarker.getLatLng();
+      updateMapLocation(position.lat, position.lng, map.getZoom());
+    });
+    return;
+  }
+
+  mapMarker.setLatLng([lat, lng]);
+}
+
+function initMapInstance() {
+  if (map || typeof L === "undefined") return;
+
+  const defaultLocation = [-25.2637, -57.5759];
+  map = L.map("mapPicker", { zoomControl: true }).setView(defaultLocation, 13);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap"
+  }).addTo(map);
+  map.on("click", (event) => updateMapLocation(event.latlng.lat, event.latlng.lng, map.getZoom()));
+  updateMapLocation(defaultLocation[0], defaultLocation[1], 13);
 }
 
 function openMapModal() {
   $("#mapModal").classList.remove("hidden");
   document.body.classList.add("modal-open");
-  if (!selectedMapLink) showMapSearch("Asuncion, Paraguay");
+  initMapInstance();
+  setTimeout(() => { if (map) map.invalidateSize(); }, 100);
 }
 
 function closeMapModal() {
@@ -225,7 +255,7 @@ function closeMapModal() {
   keepModalLock();
 }
 
-function searchMapLocation() {
+async function searchMapLocation() {
   const query = $("#mapSearch").value.trim();
   const error = $("#mapError");
   if (!query) {
@@ -233,8 +263,20 @@ function searchMapLocation() {
     return;
   }
 
-  showMapSearch(`${query}, Paraguay`);
-  error.textContent = "Si querés una ubicación exacta, tocá Abrir, compartí desde Google Maps y pegá el enlace acá.";
+  error.textContent = "Buscando ubicación...";
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(`${query}, Paraguay`)}`);
+    const results = await response.json();
+    if (!results.length) {
+      error.textContent = "No encontramos esa dirección. Probá con otra referencia.";
+      return;
+    }
+
+    updateMapLocation(Number(results[0].lat), Number(results[0].lon), 17);
+    error.textContent = "Tocá el mapa o arrastrá el pin para ajustar la ubicación exacta.";
+  } catch (errorResponse) {
+    error.textContent = "No se pudo buscar. Tocá directamente el mapa para marcar la ubicación.";
+  }
 }
 
 function initMapPicker() {
